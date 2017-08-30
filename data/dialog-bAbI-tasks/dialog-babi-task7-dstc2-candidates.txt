@@ -1,0 +1,123 @@
+1 {name} is a nice restaurant in the {area} of town serving {food} food
+1 Did you say you are looking for a restaurant in the {area} of town?
+1 {name} is on {addr}
+1 You are looking for a {food} restaurant right?
+1 {name} is a nice place in the {area} of town
+1 Sorry there is no {food} restaurant in the {pricerange} price range
+1 Sorry there is no {food} restaurant in the {area} of town
+1 Sure , {name} is on {addr}
+1 api_call {food} {area} {pricerange}
+1 I'm sorry but there is no restaurant serving {food} food
+1 {name} is a great restaurant serving {food} food and it is in the {pricerange} price range
+1 the river bar {food} and grill is a great restaurant serving {food} food and it is in the {pricerange} price range
+1 The phone number of {name} is {phone}
+1 {name} is in the {area} part of town .
+1 {name} serves {food} food in the {pricerange} price range
+1 {name} is a nice place in the {area} of town and the prices are {pricerange}
+1 Let me confirm , You are looking for a restaurant in the {pricerange} price range right?
+1 There are restaurants serving {food} food . What price range do you want?
+1 The price range at {name} is {pricerange} .
+1 {name} is in the {pricerange} price range
+1 {name} serves {food} food
+1 I'm sorry but there is no {food} restaurant in the {area} of town
+1 {name} is a great restaurant
+1 There are restaurants serving {food} food . What area do you want?
+1 {name} is a nice place in the {area} of town serving tasty {food} food
+1 Sorry there is no {pricerange} restaurant in the {area} of town serving {food} food
+1 There are restaurants serving {food} food in any part of town . What price range would you like?
+1 Sorry would you like {food} or {food} food?
+1 The post code of {name} is {postcode}
+1 I'm sorry but there is no restaurant serving {pricerange} {food} food
+1 I am sorry but there is no other {food} restaurant that matches your request
+1 {name} serves {food} food .
+1 There are restaurants in the {pricerange} price range . What area do you want?
+1 There are restaurants in the {pricerange} price range and the {area} of town . What type of food would you like?
+1 {name} is a nice restaurant in the {area} of town in the {pricerange} price range
+1 {name} is a great restaurant serving {pricerange} {food} food in the {area} of town .
+1 Sorry would you like something in the {area} or in the {area}
+1 the cow pizza kitchen and bar is a nice restaurant in the {area} of town serving {food} food
+1 There are restaurants serving any kind of food in the {pricerange} price range . What area would you like?
+1 There are restaurants serving {food} in any price range . What area would you like?
+1 the good luck {food} food takeaway is a great restaurant serving {pricerange} {food} food in the {area} of town .
+1 There are restaurants serving {food} in the {pricerange} price range . What area would you like?
+1 {name} is a good restaurant on 108 Regent Street City Centre and it is in the {pricerange} price range
+1 Sorry but there is no other {food} restaurant in the {pricerange} price range and the {area} of town
+1 I am sorry but there is no {food} restaurant that matches your request
+1 Sorry would you like something in the {pricerange} price range or in the {pricerange} price range
+1  you are welcome
+1 I'm sorry but there is no {food} restaurant in the {area} of town and the {pricerange} price range
+1 {name} Fen Ditton is in the {area} part of town .
+1 Ok , a restaurant in any part of town is that right?
+1 The address of {name} is 7 Milton Road Chesterton .
+1 I am sorry but there is no other {food} restaurant in the {pricerange} price range
+1 The post code of the river bar {food} and grill is {postcode}
+1 The address of {name} is 17 Magdalene Street City Centre .
+1 the river bar {food} and grill is a nice place in the {area} of town and the prices are {pricerange}
+1 I am sorry but there is no other {food} restaurant in the {area} of town
+1 There are restaurants serving {food} in the {area} of town . What price range would you like?
+1 Sorry would you like something in the {pricerange} price range or you dont care
+1 There are restaurants if you don't care about the food . What price range do you want?
+1 There are restaurants in the {area} of town . What type of food do you want?
+1 {name} is in the {pricerange} price range , and their post code is C.B 2, 1 D.P
+1 the cow pizza kitchen and bar serves {food} food in the {pricerange} price range
+1 Sure , the river bar {food} and grill is on {addr}
+1 The post code of the good luck {food} food takeaway is {postcode}
+1 Sorry, I can't hear you
+1 There are restaurants in the {area} of town serving any kind of food . What price range would you like?
+1 the good luck {food} food takeaway is a nice place in the {area} of town
+1 the river bar {food} and grill is a nice place in the {area} of town
+1 There are restaurants in the {pricerange} price range . What type of food do you want?
+1 Sorry but there is no other restaurant in the {pricerange} price range and the {area} of town
+1 Can I help you with anything else?
+1 Sorry would you like the {area} of town or you dont care
+1 Sure , {name} Fen Ditton is on pizza_express_Fen_Ditton_address
+1 The phone number of the good luck {food} food takeaway is {phone}
+1 The price range at the good luck {food} food takeaway is {pricerange} .
+1 {name} Fen Ditton is in the {pricerange} price range
+1 The phone number of the cow pizza kitchen and bar is {phone}
+1 {name} Fen Ditton is a great restaurant
+1 the river bar {food} and grill serves {food} food
+1 the river bar {food} and grill serves {food} food in the {pricerange} price range
+1 There are restaurants in all parts of town . What type of pricerange do you want?
+1 Sorry I am a bit confused ; please tell me again what you are looking for .
+1 {name} is in the {pricerange} price range , and their post code is C.B 4, 3 L.E
+1 the cow pizza kitchen and bar is a great restaurant
+1 The price range at {name} Fen Ditton is {pricerange} .
+1 Sure , the cow pizza kitchen and bar is on {addr}
+1 You are looking for a restaurant is that right?
+1 the good luck {food} food takeaway serves {food} food
+1 Sorry would you like {food} food or you dont care
+1 The phone number of the river bar {food} and grill is {phone}
+1 The post code of the cow pizza kitchen and bar is {postcode}
+1 There are restaurants if you don't care about the food . What area do you want?
+1 The price range at the river bar {food} and grill is {pricerange} .
+1 What part of town do you have in mind?
+1 the cow pizza kitchen and bar is in the {pricerange} price range
+1 the river bar {food} and grill is in the {pricerange} price range
+1 Let me confirm , You are looking for a restaurant and you dont care about the price range right?
+1 Would you like something in the {pricerange} , {pricerange} , or {pricerange} price range?
+1 the good luck {food} food takeaway is a nice place in the {area} of town serving tasty {food} food
+1 Hello , welcome to the Cambridge restaurant system . You can {name} for restaurants by area , price range or food type . How may I help you ?
+1 the river bar {food} and grill is a great restaurant
+1 There are restaurants if you don't care about the area or the type of food . What price range would you like?
+1 the cow pizza kitchen and bar is a great restaurant serving {food} food and it is in the {pricerange} price range
+1 the good luck {food} food takeaway is a nice place in the {area} of town and the prices are {pricerange}
+1 {name} is in the {area} , at C.B 2, 1 U.F
+1 the good luck {food} food takeaway is on {addr}
+1 the good luck {food} food takeaway is a great restaurant
+1 {name} is a great restaurant serving {food} food . Their phone number is 01223 323737 .
+1 {name} Fen Ditton is a nice place in the {area} of town
+1 {name} Fen Ditton is a nice restaurant in the {area} of town in the {pricerange} price range
+1 What kind of food would you like?
+1 There are restaurants in all parts of town . What type of food do you want?
+1 the good luck {food} food takeaway is a nice restaurant in the {area} of town serving {food} food
+1 The address of {name} is 529 Newmarket Road Fen Ditton .
+1 the cow pizza kitchen and bar is a nice place in the {area} of town
+1 the good luck {food} food takeaway is in the {pricerange} price range
+1 the cow pizza kitchen and bar serves {food} food
+1 Sure , the good luck {food} food takeaway is on {addr}
+1 the good luck {food} food takeaway is a nice restaurant in the {area} of town in the {pricerange} price range
+1 Could you please repeat that?
+1 {name} is in the {pricerange} price range , and their post code is C.B 1, 3 N.F
+1 You are looking for a restaurant serving any kind of food right?
+1 There are restaurants . That area would you like?

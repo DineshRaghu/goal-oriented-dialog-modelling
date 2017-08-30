@@ -99,3 +99,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+#custom
+task_*_summary_output
+events.out.*
+.DS_Store
+*.json
+*.err
+*.log
