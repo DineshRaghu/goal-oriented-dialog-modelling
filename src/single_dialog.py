@@ -200,27 +200,24 @@ class chatBot(object):
         if self.isInteractive:
             self.interactive()
         else:
-            testS, testQ, testA, surS, surQ, isStart  = vectorize_data_with_surface_form(
+            testS, testQ, testA, S_in_readable_form, Q_in_readable_form, dialogIDs  = vectorize_data_with_surface_form(
                 self.testData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
             n_test = len(testS)
-            #print(str(len(testS)))
             test_preds = self.batch_predict(testS, testQ, n_test)
-            #print(str(len(test_preds)))
-            #print(str(len(testA)))
             test_acc = metrics.accuracy_score(test_preds, testA)
-            dialogs_written_to_file = 0
-            dialog_id = 1
+
             all_data_points=[]
             for idx, val in enumerate(test_preds):
                 answer = self.indx2candid[testA[idx].item(0)]
                 data_point={}
                 context=[]
-                for k, element in enumerate(surS[idx]):
+                for _, element in enumerate(S_in_readable_form[idx]):
                     context.append(element)
                 data_point['context']=context
-                data_point['query']=surQ[idx]
+                data_point['query']=Q_in_readable_form[idx]
                 data_point['answer']=answer
                 data_point['prediction']=self.indx2candid[val]
+                data_point['dialog-id']=dialogIDs[idx]
                 all_data_points.append(data_point)
             
             file_to_dump_json='task-'+str(self.task_id)+'.json'
@@ -230,7 +227,6 @@ class chatBot(object):
             with open(file_to_dump_json, 'w') as f:
                 json.dump(all_data_points, f, indent=4)
 
-            #print("------------------------")
             print("Test Size      : ", n_test)
             print("Test Accuracy  : ", test_acc)
             print("------------------------")

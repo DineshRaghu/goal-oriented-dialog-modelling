@@ -112,7 +112,7 @@ def parse_dialogs_per_response(lines,candid_dic):
     context=[]
     u=None
     r=None
-    start=True
+    dialog_id=1
     for line in lines:
         line=line.strip()
         if line:
@@ -125,8 +125,7 @@ def parse_dialogs_per_response(lines,candid_dic):
                 r = tokenize(r)
                 # temporal encoding, and utterance/response encoding
                 # data.append((context[:],u[:],candid_dic[' '.join(r)]))
-                data.append((context[:],u[:],a,start))
-                start=False
+                data.append((context[:],u[:],a,dialog_id))
                 u.append('$u')
                 u.append('#'+str(nid))
                 r.append('$r')
@@ -139,8 +138,8 @@ def parse_dialogs_per_response(lines,candid_dic):
                 r.append('#'+str(nid))
                 context.append(r)
         else:
+            dialog_id=dialog_id+1
             # clear context
-            start=True
             context=[]
     return data
 
@@ -225,32 +224,33 @@ def vectorize_data_with_surface_form(data, word_idx, sentence_size, batch_size, 
     S = []
     Q = []
     A = []
-    SurS = []
-    SurQ = []
-    isStart = []
+    S_in_readable_form = []
+    Q_in_readable_form = []
+    dialogIDs = []
+
     data.sort(key=lambda x:len(x[0]),reverse=True)
-    for i, (story, query, answer, start) in enumerate(data):
+    for i, (story, query, answer, dialog_id) in enumerate(data):
         if i%batch_size==0:
             memory_size=max(1,min(max_memory_size,len(story)))
         ss = []
         story_string = []
         dbentries =set([])
-        dbFlag=False
+        dbEntriesRead=False
         for i, sentence in enumerate(story, 1):
             ls = max(0, sentence_size - len(sentence))
             ss.append([word_idx[w] if w in word_idx else 0 for w in sentence] + [0] * ls)
             story_element = ' '.join([str(x) for x in sentence[:-2]])
+
+            # if the story element is a database response/result
             if 'r_' in story_element and 'api_call' not in story_element:
-                dbFlag = True
-                #db_row_contents = sentence[0]
-                #dbentries.add(db_row_contents)
+                dbEntriesRead = True
                 if 'r_rating' in story_element:
                     dbentries.add( sentence[0] + '(' + sentence[2] + ')')
             else:
-                if dbFlag:
-                    story_string.append('DB Results : ' + ' '.join([str(x) for x in dbentries]))
+                if dbEntriesRead:
+                    story_string.append('$db : ' + ' '.join([str(x) for x in dbentries]))
                     dbentries =set([])
-                    dbFlag = False
+                    dbEntriesRead = False
                 story_string.append(' '.join([str(x) for x in sentence[-2:]]) + ' : ' + story_element)
 
 
@@ -270,12 +270,12 @@ def vectorize_data_with_surface_form(data, word_idx, sentence_size, batch_size, 
         Q.append(np.array(q))
         A.append(np.array(answer))
 
-        SurS.append(story_string)
-        SurQ.append(' '.join([str(x) for x in query]))
+        S_in_readable_form.append(story_string)
+        Q_in_readable_form.append(' '.join([str(x) for x in query]))
 
-        isStart.append(start)
+        dialogIDs.append(dialog_id)
 
-    return S, Q, A, SurS, SurQ, isStart
+    return S, Q, A, S_in_readable_form, Q_in_readable_form, dialogIDs
 
 if __name__ == '__main__':
     u = tokenize('The phone number of taj_tandoori is taj_tandoori_phone')
