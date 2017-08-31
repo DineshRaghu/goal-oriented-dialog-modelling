@@ -81,8 +81,8 @@ class chatBot(object):
                                   hops=self.hops, max_grad_norm=self.max_grad_norm, optimizer=optimizer, task_id=task_id)
         self.saver = tf.train.Saver(max_to_keep=50)
 
-        self.summary_writer = tf.summary.FileWriter(
-            self.model.root_dir, self.model.graph_output.graph)
+        #self.summary_writer = tf.summary.FileWriter(
+        #    self.model.root_dir, self.model.graph_output.graph)
 
     def build_vocab(self, data, candidates):
         vocab = reduce(lambda x, y: x | y, (set(
@@ -183,8 +183,8 @@ class chatBot(object):
                 merged_summary = tf.summary.merge(
                     [train_acc_summary, val_acc_summary])
                 summary_str = self.sess.run(merged_summary)
-                self.summary_writer.add_summary(summary_str, t)
-                self.summary_writer.flush()
+                #self.summary_writer.add_summary(summary_str, t)
+                #self.summary_writer.flush()
 
                 if val_acc > best_validation_accuracy:
                     best_validation_accuracy = val_acc
