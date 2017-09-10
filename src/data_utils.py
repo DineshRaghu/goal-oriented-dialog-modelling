@@ -227,6 +227,7 @@ def vectorize_data_with_surface_form(data, word_idx, sentence_size, batch_size, 
     S_in_readable_form = []
     Q_in_readable_form = []
     dialogIDs = []
+    last_db_results = []
 
     data.sort(key=lambda x:len(x[0]),reverse=True)
     for i, (story, query, answer, dialog_id) in enumerate(data):
@@ -234,13 +235,16 @@ def vectorize_data_with_surface_form(data, word_idx, sentence_size, batch_size, 
             memory_size=max(1,min(max_memory_size,len(story)))
         ss = []
         story_string = []
+
         dbentries =set([])
         dbEntriesRead=False
+        last_db_result=""
+
         for i, sentence in enumerate(story, 1):
             ls = max(0, sentence_size - len(sentence))
             ss.append([word_idx[w] if w in word_idx else 0 for w in sentence] + [0] * ls)
-            story_element = ' '.join([str(x) for x in sentence[:-2]])
 
+            story_element = ' '.join([str(x) for x in sentence[:-2]])
             # if the story element is a database response/result
             if 'r_' in story_element and 'api_call' not in story_element:
                 dbEntriesRead = True
@@ -248,11 +252,13 @@ def vectorize_data_with_surface_form(data, word_idx, sentence_size, batch_size, 
                     dbentries.add( sentence[0] + '(' + sentence[2] + ')')
             else:
                 if dbEntriesRead:
-                    story_string.append('$db : ' + ' '.join([str(x) for x in dbentries]))
+                    #story_string.append('$db : ' + ' '.join([str(x) for x in dbentries]))
+                    last_db_result = '$db : ' + ' '.join([str(x) for x in dbentries])
                     dbentries =set([])
                     dbEntriesRead = False
-                story_string.append(' '.join([str(x) for x in sentence[-2:]]) + ' : ' + story_element)
-
+                #story_string.append(' '.join([str(x) for x in sentence[-2:]]) + ' : ' + story_element)
+            
+            story_string.append(' '.join([str(x) for x in sentence[-2:]]) + ' : ' + story_element)
 
         # take only the most recent sentences that fit in memory
         ss = ss[::-1][:memory_size][::-1]
@@ -272,11 +278,24 @@ def vectorize_data_with_surface_form(data, word_idx, sentence_size, batch_size, 
 
         S_in_readable_form.append(story_string)
         Q_in_readable_form.append(' '.join([str(x) for x in query]))
+        last_db_results.append(last_db_result)
 
         dialogIDs.append(dialog_id)
 
-    return S, Q, A, S_in_readable_form, Q_in_readable_form, dialogIDs
+    return S, Q, A, S_in_readable_form, Q_in_readable_form, last_db_results, dialogIDs
 
+def restaurant_reco_evluation(test_preds, testA, indx2candid):
+    total = 0
+    match = 0
+    for idx, val in enumerate(test_preds):
+        answer = indx2candid[testA[idx].item(0)]
+        prediction = indx2candid[val]
+        if "what do you think of this option:" in prediction:
+            total = total+1
+            if prediction == answer:
+                match=match+1
+    print('Restaurant Recommendation Accuracy : ' + str(match/float(total)) +  " (" +  str(match) +  "/" + str(total) + ")") 
+    
 if __name__ == '__main__':
     u = tokenize('The phone number of taj_tandoori is taj_tandoori_phone')
     print(u)

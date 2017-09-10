@@ -1,0 +1,1 @@
+python single_dialog.py --train False --task_id 3 --interactive False --embedding_size 32 --hops 3 --OOV False --data_dir ../data/dialog-anonymized/ --model_dir model/ --logs_dir logs/ >> logs/test_accuracies.log 2>> logs/single_dialog.err

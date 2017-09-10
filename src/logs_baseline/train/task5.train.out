@@ -1,0 +1,169 @@
+Task  5
+
+Candidate Size :  4212
+Vocab Size     :  3815
+Training Size 18340
+Validation Size 18457
+-----------------------
+Epoch 10
+Total Cost: 21614.4532375
+Training Accuracy: 0.783642311887
+Validation Accuracy: 0.763504361489
+-----------------------
+-----------------------
+Epoch 20
+Total Cost: 18820.5407113
+Training Accuracy: 0.817230098146
+Validation Accuracy: 0.796879232811
+-----------------------
+-----------------------
+Epoch 30
+Total Cost: 20512.6960796
+Training Accuracy: 0.839149400218
+Validation Accuracy: 0.804626970797
+-----------------------
+-----------------------
+Epoch 40
+Total Cost: 25372.6821886
+Training Accuracy: 0.834787350055
+Validation Accuracy: 0.798558812375
+-----------------------
+-----------------------
+Epoch 50
+Total Cost: 30596.802519
+Training Accuracy: 0.849945474373
+Validation Accuracy: 0.818659587149
+-----------------------
+-----------------------
+Epoch 60
+Total Cost: 27392.4964195
+Training Accuracy: 0.838876772083
+Validation Accuracy: 0.810478409276
+-----------------------
+-----------------------
+Epoch 70
+Total Cost: 25426.7818452
+Training Accuracy: 0.85239912759
+Validation Accuracy: 0.819255566994
+-----------------------
+-----------------------
+Epoch 80
+Total Cost: 27907.8482332
+Training Accuracy: 0.869847328244
+Validation Accuracy: 0.844665980387
+-----------------------
+-----------------------
+Epoch 90
+Total Cost: 32926.8284966
+Training Accuracy: 0.844383860414
+Validation Accuracy: 0.816167307796
+-----------------------
+-----------------------
+Epoch 100
+Total Cost: 30777.9249495
+Training Accuracy: 0.877371864776
+Validation Accuracy: 0.842444600964
+-----------------------
+-----------------------
+Epoch 110
+Total Cost: 31643.0903143
+Training Accuracy: 0.856379498364
+Validation Accuracy: 0.829062144444
+-----------------------
+-----------------------
+Epoch 120
+Total Cost: 33283.9932726
+Training Accuracy: 0.860305343511
+Validation Accuracy: 0.831933683697
+-----------------------
+-----------------------
+Epoch 130
+Total Cost: 39671.9385173
+Training Accuracy: 0.842857142857
+Validation Accuracy: 0.815137888064
+-----------------------
+-----------------------
+Epoch 140
+Total Cost: 28450.4021699
+Training Accuracy: 0.874100327154
+Validation Accuracy: 0.844611800401
+-----------------------
+-----------------------
+Epoch 150
+Total Cost: 28632.2643618
+Training Accuracy: 0.83653217012
+Validation Accuracy: 0.805818930487
+-----------------------
+-----------------------
+Epoch 160
+Total Cost: 39569.2649813
+Training Accuracy: 0.837840785169
+Validation Accuracy: 0.811453649022
+-----------------------
+-----------------------
+Epoch 170
+Total Cost: 35802.1007766
+Training Accuracy: 0.850817884406
+Validation Accuracy: 0.820068266782
+-----------------------
+-----------------------
+Epoch 180
+Total Cost: 40111.6301717
+Training Accuracy: 0.871428571429
+Validation Accuracy: 0.843419840711
+-----------------------
+-----------------------
+Epoch 190
+Total Cost: 36910.9815
+Training Accuracy: 0.849836423119
+Validation Accuracy: 0.822668906106
+-----------------------
+-----------------------
+Epoch 200
+Total Cost: 34628.8832114
+Training Accuracy: 0.863086150491
+Validation Accuracy: 0.828628704557
+-----------------------
+
+------------------------------------------------------------
+Sender: LSF System <rer@dccxc042>
+Subject: Job 402232: </u/diraghu1/miniconda3/bin/python single_dialog.py --train True --task_id 5 --embedding_size 32 --hops 3 --interactive False --OOV False --model_dir model_baseline/> in cluster <dcc> Done
+
+Job </u/diraghu1/miniconda3/bin/python single_dialog.py --train True --task_id 5 --embedding_size 32 --hops 3 --interactive False --OOV False --model_dir model_baseline/> was submitted from host <dccxl012> by user <diraghu1> in cluster <dcc> at Sat Sep  9 13:44:38 2017.
+Job was executed on host(s) <dccxc042>, in queue <x86_6h>, as user <diraghu1> in cluster <dcc> at Sat Sep  9 13:44:40 2017.
+</u/diraghu1> was used as the home directory.
+</dccstor/dineshwcs/iit-proj/src> was used as the working directory.
+Started at Sat Sep  9 13:44:40 2017.
+Terminated at Sat Sep  9 16:23:32 2017.
+Results reported at Sat Sep  9 16:23:32 2017.
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/u/diraghu1/miniconda3/bin/python single_dialog.py --train True --task_id 5 --embedding_size 32 --hops 3 --interactive False --OOV False --model_dir model_baseline/
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   10291.18 sec.
+    Max Memory :                                 377 MB
+    Average Memory :                             361.07 MB
+    Total Requested Memory :                     4300.00 MB
+    Delta Memory :                               3923.00 MB
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                6
+    Run time :                                   9532 sec.
+    Turnaround time :                            9534 sec.
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file <task5.train.err> for stderr output of this job.
+

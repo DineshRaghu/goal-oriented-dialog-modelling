@@ -113,7 +113,7 @@ class MemN2NDialog(object):
 
         # cross entropy
         # (batch_size, candidates_size)
-        logits = self._inference(self._stories, self._queries)
+        logits,attn_arr = self._inference(self._stories, self._queries)
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits, labels=self._answers, name="cross_entropy")
         cross_entropy_sum = tf.reduce_sum(
@@ -144,7 +144,7 @@ class MemN2NDialog(object):
 
         # assign ops
         self.loss_op = loss_op
-        self.predict_op = predict_op
+        self.predict_op = predict_op,attn_arr
         self.predict_proba_op = predict_proba_op
         self.predict_log_proba_op = predict_log_proba_op
         self.train_op = train_op
@@ -178,10 +178,11 @@ class MemN2NDialog(object):
 
     def _inference(self, stories, queries):
         with tf.variable_scope(self._name):
+            attn_arr = []
             q_emb = tf.nn.embedding_lookup(self.A, queries)
             u_0 = tf.reduce_sum(q_emb, 1)
             u = [u_0]
-            for _ in range(self._hops):
+            for hop_index in range(self._hops):
                 m_emb = tf.nn.embedding_lookup(self.A, stories)
                 m = tf.reduce_sum(m_emb, 2)
                 # hack to get around no reduce_dot
@@ -190,7 +191,7 @@ class MemN2NDialog(object):
 
                 # Calculate probabilities
                 probs = tf.nn.softmax(dotted)
-
+                attn_arr.append(probs)
                 probs_temp = tf.transpose(tf.expand_dims(probs, -1), [0, 2, 1])
                 c_temp = tf.transpose(m, [0, 2, 1])
                 o_k = tf.reduce_sum(c_temp * probs_temp, 2)
@@ -204,7 +205,7 @@ class MemN2NDialog(object):
                 u.append(u_k)
             candidates_emb = tf.nn.embedding_lookup(self.W, self._candidates)
             candidates_emb_sum = tf.reduce_sum(candidates_emb, 1)
-            return tf.matmul(u_k, tf.transpose(candidates_emb_sum))
+            return tf.matmul(u_k, tf.transpose(candidates_emb_sum)), attn_arr
             # logits=tf.matmul(u_k, self.W)
             # return
             # tf.transpose(tf.sparse_tensor_dense_matmul(self._candidates,tf.transpose(logits)))

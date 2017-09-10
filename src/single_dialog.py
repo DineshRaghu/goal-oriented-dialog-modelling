@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from data_utils import load_dialog_task, vectorize_data, load_candidates, vectorize_candidates, vectorize_data_with_surface_form, vectorize_candidates_sparse, tokenize
+from data_utils import load_dialog_task, vectorize_data, load_candidates, vectorize_candidates, vectorize_data_with_surface_form, vectorize_candidates_sparse, tokenize, restaurant_reco_evluation
 from sklearn import metrics
 from memn2n import MemN2NDialog
 from itertools import chain
 from six.moves import range, reduce
+from operator import itemgetter
 import sys
 import tensorflow as tf
 import numpy as np
@@ -29,6 +30,8 @@ tf.flags.DEFINE_integer("task_id", 6, "bAbI task id, 1 <= id <= 6")
 tf.flags.DEFINE_integer("random_state", None, "Random state.")
 tf.flags.DEFINE_string("data_dir", "../data/dialog-bAbI-tasks/",
                        "Directory containing bAbI tasks")
+tf.flags.DEFINE_string("logs_dir", "logs/",
+                       "Directory containing bAbI tasks")
 tf.flags.DEFINE_string("model_dir", "model/",
                        "Directory containing memn2n model checkpoints")
 tf.flags.DEFINE_boolean('train', True, 'if True, begin to train')
@@ -37,10 +40,11 @@ tf.flags.DEFINE_boolean('OOV', False, 'if True, use OOV test set')
 FLAGS = tf.flags.FLAGS
 
 class chatBot(object):
-    def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False, memory_size=50, random_state=None, batch_size=32, learning_rate=0.001, epsilon=1e-8, max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20):
+    def __init__(self, data_dir, model_dir, logs_dir, task_id, isInteractive=True, OOV=False, memory_size=50, random_state=None, batch_size=32, learning_rate=0.01, epsilon=1e-8, max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20):
         self.data_dir = data_dir
         self.task_id = task_id
         self.model_dir = model_dir
+        self.logs_dir = logs_dir
         # self.isTrain=isTrain
         self.isInteractive = isInteractive
         self.OOV = OOV
@@ -163,8 +167,8 @@ class chatBot(object):
                 cost_t = self.model.batch_fit(s, q, a)
                 total_cost += cost_t
             if t % self.evaluation_interval == 0:
-                train_preds = self.batch_predict(trainS, trainQ, n_train)
-                val_preds = self.batch_predict(valS, valQ, n_val)
+                train_preds,_ = self.batch_predict(trainS, trainQ, n_train)
+                val_preds,_ = self.batch_predict(valS, valQ, n_val)
                 train_acc = metrics.accuracy_score(
                     np.array(train_preds), trainA)
                 val_acc = metrics.accuracy_score(val_preds, valA)
@@ -200,12 +204,14 @@ class chatBot(object):
         if self.isInteractive:
             self.interactive()
         else:
-            testS, testQ, testA, S_in_readable_form, Q_in_readable_form, dialogIDs  = vectorize_data_with_surface_form(
+            testS, testQ, testA, S_in_readable_form, Q_in_readable_form, last_db_results, dialogIDs  = vectorize_data_with_surface_form(
                 self.testData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
             n_test = len(testS)
-            test_preds = self.batch_predict(testS, testQ, n_test)
+            test_preds,attn_weights = self.batch_predict(testS, testQ, n_test)
             test_acc = metrics.accuracy_score(test_preds, testA)
 
+            match=0
+            total=0
             all_data_points=[]
             for idx, val in enumerate(test_preds):
                 answer = self.indx2candid[testA[idx].item(0)]
@@ -218,39 +224,103 @@ class chatBot(object):
                 data_point['answer']=answer
                 data_point['prediction']=self.indx2candid[val]
                 data_point['dialog-id']=dialogIDs[idx]
+
+                if len(S_in_readable_form[idx]) <= 500:
+                    for hop_index in range(0, self.hops):
+                        attn_tuples_list = []
+                        attn_arr = attn_weights[hop_index][idx]
+                        for mem_index in range(0, len(attn_arr)):
+                            if(mem_index > len(S_in_readable_form[idx])-1):
+                                attn_tuples_list.append((mem_index, attn_arr[mem_index], "NONE"))
+                            else:
+                                if(len(S_in_readable_form[idx]) > 50):
+                                    attn_tuples_list.append((mem_index, attn_arr[mem_index], S_in_readable_form[idx][len(S_in_readable_form[idx])-50+mem_index]))
+                                else:
+                                    attn_tuples_list.append((mem_index, attn_arr[mem_index], S_in_readable_form[idx][mem_index]))
+                        sorted_tuple = sorted(attn_tuples_list, key=itemgetter(1), reverse=True)
+                        attn_list=[]
+                        for tuple_idx in range(0, 10):
+                            if len(sorted_tuple) > tuple_idx and sorted_tuple[tuple_idx][1] > 0.001:
+                                attn_list.append(str(sorted_tuple[tuple_idx][1]) + ' : ' + sorted_tuple[tuple_idx][2])
+                        data_point['attn-hop-' + str(hop_index)]=attn_list
                 all_data_points.append(data_point)
-            
-            file_to_dump_json='task-'+str(self.task_id)+'.json'
+
+                if self.task_id==3 and "what do you think of this option:" in answer :
+                    dbset=set()
+                    if self.task_id==3:
+                        splitstr=last_db_results[idx].split( )
+                        for i in range(2, len(splitstr)):
+                            dbset.add(splitstr[i][:splitstr[i].index('(')])
+                            
+                    total = total+1
+                    pred_str=self.indx2candid[val]
+                    if "what do you think of this option:" in pred_str:
+                        pred_restaurant=pred_str[34:].strip()
+                        if pred_restaurant in dbset:
+                            match=match+1
+
+            file_to_dump_json= self.logs_dir + 'task-'+str(self.task_id)+'.json'
             if self.OOV:
-                file_to_dump_json='task-'+str(self.task_id)+'-oov.json'
+                file_to_dump_json= self.logs_dir + 'task-'+str(self.task_id)+'-oov.json'
             
             with open(file_to_dump_json, 'w') as f:
                 json.dump(all_data_points, f, indent=4)
 
             print("Test Size      : ", n_test)
             print("Test Accuracy  : ", test_acc)
+            
+            if self.task_id==3:
+                '''
+                counter = []
+                for idx in range(0,10):
+                    answer = self.indx2candid[testA[idx].item(0)]
+                    if len(answer) > 0:
+                        last = str(answer)
+                        if 'what do you think of this option' in last:
+                            count = 1
+                            s = testS[idx:idx+1]
+                            q = testQ[idx:idx+1]
+                            a = testA[idx:idx+1]
+                            pred = self.model.predict(s, q)
+                            while pred != a and count < 100:
+                                add_query = np.array([[134, 3775, 91, 135, 3790, 98, 131, 62, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [3768, 119, 131, 96, 141, 139, 98, 3792, 61, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+                                s = [np.concatenate((s[0], add_query))]
+                                count += 1                   
+                                pred = self.model.predict(s, q)
+                            counter.append(count)
+                print("Suggestion Game Mean   :", float(sum(counter))/len(counter))
+                '''
+                restaurant_reco_evluation(test_preds, testA, self.indx2candid)
+                print('Restaurant Recommendation from DB Accuracy : ' + str(match/float(total)) +  " (" +  str(match) +  "/" + str(total) + ")")
+            
             print("------------------------")
 
     def batch_predict(self, S, Q, n):
         preds = []
+        attn_weights = []
+        for k in range(0,self.hops):
+            attn_weights.append([])
         for start in range(0, n, self.batch_size):
             end = start + self.batch_size
             s = S[start:end]
             q = Q[start:end]
-            pred = self.model.predict(s, q)
+            pred, attn_arr = self.model.predict(s, q)
             preds += list(pred)
-        return preds
+            for k in range(0,self.hops):
+                attn_weights[k].extend(attn_arr[k])
+        return preds,attn_weights
 
     def close_session(self):
         self.sess.close()
 
 
 if __name__ == '__main__':
-    model_dir = "task" + str(FLAGS.task_id) + "_" + FLAGS.model_dir
+    model_dir = FLAGS.model_dir + "task" + str(FLAGS.task_id) + "_model/"
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
-    chatbot = chatBot(FLAGS.data_dir, model_dir, FLAGS.task_id, OOV=FLAGS.OOV,
-                      isInteractive=FLAGS.interactive, batch_size=FLAGS.batch_size)
+    chatbot = chatBot(FLAGS.data_dir, model_dir, FLAGS.logs_dir, FLAGS.task_id, OOV=FLAGS.OOV,
+                      isInteractive=FLAGS.interactive, batch_size=FLAGS.batch_size,
+                      learning_rate = FLAGS.learning_rate, hops = FLAGS.hops, embedding_size = FLAGS.embedding_size)
     # chatbot.run()
     if FLAGS.train:
         chatbot.train()

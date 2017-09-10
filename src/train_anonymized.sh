@@ -1,0 +1,1 @@
+jbsub -queue x86_6h -mem 4g -out task3.anonymized.train.out -err task3.anonymized.train.err /u/diraghu1/miniconda3/bin/python single_dialog.py --train True --task_id 3 --embedding_size 32 --hops 3 --interactive False --OOV False --data_dir ../data/dialog-anonymized/
