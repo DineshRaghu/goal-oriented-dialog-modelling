@@ -209,7 +209,6 @@ class chatBot(object):
             n_test = len(testS)
             test_preds,attn_weights = self.batch_predict(testS, testQ, n_test)
             test_acc = metrics.accuracy_score(test_preds, testA)
-
             match=0
             total=0
             all_data_points=[]
@@ -270,8 +269,12 @@ class chatBot(object):
             print("Test Accuracy  : ", test_acc)
             
             if self.task_id==3:
-                '''
                 counter = []
+                query1 = ['no', 'this', 'does', 'not', 'work', 'for', 'me', '$u', '#0']
+                query2 = ['sure', 'let', 'me', 'find', 'other', 'option', 'for', 'you', '$r', '#0']
+                query1_hash = [self.word_idx[w] if w in self.word_idx else 0 for w in query1] + [0] * (self.sentence_size - len(query1))
+                query2_hash = [self.word_idx[w] if w in self.word_idx else 0 for w in query2] + [0] * (self.sentence_size - len(query2))
+                request_query_append = np.array([query1_hash, query2_hash])
                 for idx in range(0,10):
                     answer = self.indx2candid[testA[idx].item(0)]
                     if len(answer) > 0:
@@ -283,13 +286,11 @@ class chatBot(object):
                             a = testA[idx:idx+1]
                             pred = self.model.predict(s, q)
                             while pred != a and count < 100:
-                                add_query = np.array([[134, 3775, 91, 135, 3790, 98, 131, 62, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [3768, 119, 131, 96, 141, 139, 98, 3792, 61, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-                                s = [np.concatenate((s[0], add_query))]
+                                s = [np.concatenate((s[0], request_query_append))]
                                 count += 1                   
                                 pred = self.model.predict(s, q)
                             counter.append(count)
                 print("Suggestion Game Mean   :", float(sum(counter))/len(counter))
-                '''
                 restaurant_reco_evluation(test_preds, testA, self.indx2candid)
                 print('Restaurant Recommendation from DB Accuracy : ' + str(match/float(total)) +  " (" +  str(match) +  "/" + str(total) + ")")
             
