@@ -272,10 +272,7 @@ class chatBot(object):
                 counter = []
                 query1 = ['no', 'this', 'does', 'not', 'work', 'for', 'me', '$u', '#0']
                 query2 = ['sure', 'let', 'me', 'find', 'other', 'option', 'for', 'you', '$r', '#0']
-                query1_hash = [self.word_idx[w] if w in self.word_idx else 0 for w in query1] + [0] * (self.sentence_size - len(query1))
-                query2_hash = [self.word_idx[w] if w in self.word_idx else 0 for w in query2] + [0] * (self.sentence_size - len(query2))
-                request_query_append = np.array([query1_hash, query2_hash])
-                for idx in range(0,10):
+                for idx in range(0, n_test):
                     answer = self.indx2candid[testA[idx].item(0)]
                     if len(answer) > 0:
                         last = str(answer)
@@ -285,7 +282,16 @@ class chatBot(object):
                             q = testQ[idx:idx+1]
                             a = testA[idx:idx+1]
                             pred = self.model.predict(s, q)
+                            turn = S_in_readable_form[idx][-1]
+                            turn_no = int(turn.split('#')[1].split(' ')[0])
                             while pred != a and count < 100:
+                                turn_no += 1
+                                turn_element = "#" + str(turn_no)
+                                query1[-1] = (turn_element)
+                                query2[-1] = (turn_element)
+                                query1_hash = [self.word_idx[w] if w in self.word_idx else 0 for w in query1] + [0] * (self.sentence_size - len(query1))
+                                query2_hash = [self.word_idx[w] if w in self.word_idx else 0 for w in query2] + [0] * (self.sentence_size - len(query2))
+                                request_query_append = np.array([query1_hash, query2_hash])
                                 s = [np.concatenate((s[0], request_query_append))]
                                 count += 1                   
                                 pred = self.model.predict(s, q)
