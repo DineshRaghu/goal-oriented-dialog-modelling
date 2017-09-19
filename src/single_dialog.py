@@ -34,13 +34,14 @@ tf.flags.DEFINE_string("logs_dir", "logs/",
                        "Directory containing bAbI tasks")
 tf.flags.DEFINE_string("model_dir", "model/",
                        "Directory containing memn2n model checkpoints")
+tf.flags.DEFINE_string('loss_type', 'uniform', 'If weighted, use weighted loss function')
 tf.flags.DEFINE_boolean('train', True, 'if True, begin to train')
 tf.flags.DEFINE_boolean('interactive', False, 'if True, interactive')
 tf.flags.DEFINE_boolean('OOV', False, 'if True, use OOV test set')
 FLAGS = tf.flags.FLAGS
 
 class chatBot(object):
-    def __init__(self, data_dir, model_dir, logs_dir, task_id, isInteractive=True, OOV=False, memory_size=50, random_state=None, batch_size=32, learning_rate=0.01, epsilon=1e-8, max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20):
+    def __init__(self, data_dir, model_dir, logs_dir, task_id, isInteractive=True, OOV=False, memory_size=50, random_state=None, batch_size=32, learning_rate=0.01, epsilon=1e-8, max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20, loss_type='uniform'):
         self.data_dir = data_dir
         self.task_id = task_id
         self.model_dir = model_dir
@@ -82,7 +83,7 @@ class chatBot(object):
             learning_rate=self.learning_rate, epsilon=self.epsilon)
         self.sess = tf.Session()
         self.model = MemN2NDialog(self.batch_size, self.vocab_size, self.n_cand, self.sentence_size, self.embedding_size, self.candidates_vec, session=self.sess,
-                                  hops=self.hops, max_grad_norm=self.max_grad_norm, optimizer=optimizer, task_id=task_id)
+                                  hops=self.hops, max_grad_norm=self.max_grad_norm, optimizer=optimizer, task_id=task_id, loss_type=loss_type)
         self.saver = tf.train.Saver(max_to_keep=50)
 
         #self.summary_writer = tf.summary.FileWriter(
@@ -164,7 +165,8 @@ class chatBot(object):
                 s = trainS[start:end]
                 q = trainQ[start:end]
                 a = trainA[start:end]
-                cost_t = self.model.batch_fit(s, q, a)
+                c = self.classify_dialogs(a)
+                cost_t = self.model.batch_fit(s, q, a, c)
                 total_cost += cost_t
             if t % self.evaluation_interval == 0:
                 train_preds,_ = self.batch_predict(trainS, trainQ, n_train)
@@ -267,7 +269,7 @@ class chatBot(object):
 
             print("Test Size      : ", n_test)
             print("Test Accuracy  : ", test_acc)
-            
+
             if self.task_id==3:
                 counter = []
                 query1 = ['no', 'this', 'does', 'not', 'work', 'for', 'me', '$u', '#0']
@@ -280,11 +282,11 @@ class chatBot(object):
                             count = 1
                             s = testS[idx:idx+1]
                             q = testQ[idx:idx+1]
-                            a = testA[idx:idx+1]
-                            pred = self.model.predict(s, q)
+                            a = testA[idx]
+                            pred, att = self.model.predict(s, q)
                             turn = S_in_readable_form[idx][-1]
                             turn_no = int(turn.split('#')[1].split(' ')[0])
-                            while pred != a and count < 100:
+                            while pred.item(0) != a and count < 100:
                                 turn_no += 1
                                 turn_element = "#" + str(turn_no)
                                 query1[-1] = (turn_element)
@@ -294,11 +296,11 @@ class chatBot(object):
                                 request_query_append = np.array([query1_hash, query2_hash])
                                 s = [np.concatenate((s[0], request_query_append))]
                                 count += 1                   
-                                pred = self.model.predict(s, q)
+                                pred, att = self.model.predict(s, q)
                             counter.append(count)
                 print("Suggestion Game Mean   :", float(sum(counter))/len(counter))
-                restaurant_reco_evluation(test_preds, testA, self.indx2candid)
-                print('Restaurant Recommendation from DB Accuracy : ' + str(match/float(total)) +  " (" +  str(match) +  "/" + str(total) + ")")
+            restaurant_reco_evluation(test_preds, testA, self.indx2candid)
+            print('Restaurant Recommendation from DB Accuracy : ' + str(match/float(total)) +  " (" +  str(match) +  "/" + str(total) + ")")
             
             print("------------------------")
 
@@ -317,6 +319,16 @@ class chatBot(object):
                 attn_weights[k].extend(attn_arr[k])
         return preds,attn_weights
 
+    def classify_dialogs(self, A):
+        answer_type = []
+        for idx in range(len(A)):
+            answer = self.indx2candid[A[idx].item(0)]
+            if "what do you think of this option:" in answer:
+                answer_type.append(1)
+            else:
+                answer_type.append(0)
+        return answer_type
+
     def close_session(self):
         self.sess.close()
 
@@ -327,7 +339,8 @@ if __name__ == '__main__':
         os.makedirs(model_dir)
     chatbot = chatBot(FLAGS.data_dir, model_dir, FLAGS.logs_dir, FLAGS.task_id, OOV=FLAGS.OOV,
                       isInteractive=FLAGS.interactive, batch_size=FLAGS.batch_size,
-                      learning_rate = FLAGS.learning_rate, hops = FLAGS.hops, embedding_size = FLAGS.embedding_size)
+                      learning_rate = FLAGS.learning_rate, hops = FLAGS.hops, embedding_size = FLAGS.embedding_size,
+                      loss_type = FLAGS.loss_type)
     # chatbot.run()
     if FLAGS.train:
         chatbot.train()

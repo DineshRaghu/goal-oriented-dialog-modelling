@@ -42,7 +42,9 @@ class MemN2NDialog(object):
     """End-To-End Memory Network."""
 
     def __init__(self, batch_size, vocab_size, candidates_size, sentence_size, embedding_size,
-                 candidates_vec,
+                 candidates_vec, 
+                 loss_type='uniform',
+                 loss_weight=2.0,
                  hops=3,
                  max_grad_norm=40.0,
                  nonlin=None,
@@ -102,6 +104,8 @@ class MemN2NDialog(object):
         self._opt = optimizer
         self._name = name
         self._candidates = candidates_vec
+        self.loss_type = loss_type
+        self.loss_weight = loss_weight
 
         self._build_inputs()
         self._build_vars()
@@ -111,16 +115,30 @@ class MemN2NDialog(object):
         self.root_dir = "%s_%s_%s_%s/" % ('task',
                                           str(task_id), 'summary_output', timestamp)
 
-        # cross entropy
-        # (batch_size, candidates_size)
         logits,attn_arr = self._inference(self._stories, self._queries)
-        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-            logits=logits, labels=self._answers, name="cross_entropy")
-        cross_entropy_sum = tf.reduce_sum(
-            cross_entropy, name="cross_entropy_sum")
 
-        # loss op
-        loss_op = cross_entropy_sum
+        if loss_type == "uniform":
+            cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=logits, labels=self._answers, name="cross_entropy")
+            cross_entropy_sum = tf.reduce_sum(
+                cross_entropy, name="cross_entropy_sum")
+            loss_op = cross_entropy_sum
+        elif loss_type == "weighted":
+            mask1 = self._answer_types < 1
+            mask2 = self._answer_types > 0
+            logits_type1 = tf.boolean_mask(logits, mask1)
+            answers_type1 = tf.boolean_mask(self._answers, mask1)
+            logits_type2 = tf.boolean_mask(logits, mask2)
+            answers_type2 = tf.boolean_mask(self._answers, mask2)
+            cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=logits_type1, labels=answers_type1 , name="cross_entropy")
+            cross_entropy_sum = tf.reduce_sum(
+                cross_entropy, name="cross_entropy_sum")
+            weighted_cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=logits_type2, labels=answers_type2 , name="weighted_cross_entropy")
+            weighted_cross_entropy_sum = tf.reduce_sum(
+                weighted_cross_entropy, name="weighted_cross_entropy_sum")
+            loss_op = cross_entropy_sum + self.loss_weight*weighted_cross_entropy_sum
 
         # gradient pipeline
         grads_and_vars = self._opt.compute_gradients(loss_op)
@@ -161,6 +179,7 @@ class MemN2NDialog(object):
         self._queries = tf.placeholder(
             tf.int32, [None, self._sentence_size], name="queries")
         self._answers = tf.placeholder(tf.int32, [None], name="answers")
+        self._answer_types = tf.placeholder(tf.int32, [None], name="answer_types")
 
     def _build_vars(self):
         with tf.variable_scope(self._name):
@@ -210,19 +229,20 @@ class MemN2NDialog(object):
             # return
             # tf.transpose(tf.sparse_tensor_dense_matmul(self._candidates,tf.transpose(logits)))
 
-    def batch_fit(self, stories, queries, answers):
+    def batch_fit(self, stories, queries, answers, answer_types):
         """Runs the training algorithm over the passed batch
 
         Args:
             stories: Tensor (None, memory_size, sentence_size)
             queries: Tensor (None, sentence_size)
             answers: Tensor (None, vocab_size)
+            answer_types: Tensor (None, 1)
 
         Returns:
             loss: floating-point number, the loss computed for the batch
         """
-        feed_dict = {self._stories: stories,
-                     self._queries: queries, self._answers: answers}
+        feed_dict = {self._stories: stories, self._queries: queries, 
+                    self._answers: answers, self._answer_types: answer_types}
         loss, _ = self._sess.run(
             [self.loss_op, self.train_op], feed_dict=feed_dict)
         return loss
