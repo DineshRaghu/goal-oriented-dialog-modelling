@@ -59,7 +59,7 @@ class chatBot(object):
         self.hops = hops
         self.epochs = epochs
         self.embedding_size = embedding_size
-
+        
         if OOV:
             print("Task ", task_id, " with OOV")
         else:
@@ -180,6 +180,7 @@ class chatBot(object):
                 print('Training Accuracy:', train_acc)
                 print('Validation Accuracy:', val_acc)
                 print('-----------------------')
+                sys.stdout.flush()
 
                 # write summary
                 train_acc_summary = tf.summary.scalar(
@@ -338,7 +339,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     chatbot = chatBot(FLAGS.data_dir, model_dir, FLAGS.logs_dir, FLAGS.task_id, OOV=FLAGS.OOV,
-                      isInteractive=FLAGS.interactive, batch_size=FLAGS.batch_size,
+                      isInteractive=FLAGS.interactive, batch_size=FLAGS.batch_size, epochs=FLAGS.epochs,
                       learning_rate = FLAGS.learning_rate, hops = FLAGS.hops, embedding_size = FLAGS.embedding_size,
                       loss_type = FLAGS.loss_type)
     # chatbot.run()
