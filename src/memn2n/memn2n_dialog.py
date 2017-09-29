@@ -156,13 +156,15 @@ class MemN2NDialog(object):
 
         # predict ops
         predict_op = tf.argmax(logits, 1, name="predict_op")
+        _,ranked_candidates = tf.nn.top_k(logits, 25)
+
         predict_proba_op = tf.nn.softmax(logits, name="predict_proba_op")
         predict_log_proba_op = tf.log(
             predict_proba_op, name="predict_log_proba_op")
 
         # assign ops
         self.loss_op = loss_op
-        self.predict_op = predict_op,attn_arr
+        self.predict_op = predict_op,attn_arr,ranked_candidates
         self.predict_proba_op = predict_proba_op
         self.predict_log_proba_op = predict_log_proba_op
         self.train_op = train_op

@@ -38,10 +38,12 @@ tf.flags.DEFINE_string('loss_type', 'uniform', 'If weighted, use weighted loss f
 tf.flags.DEFINE_boolean('train', True, 'if True, begin to train')
 tf.flags.DEFINE_boolean('interactive', False, 'if True, interactive')
 tf.flags.DEFINE_boolean('OOV', False, 'if True, use OOV test set')
+tf.flags.DEFINE_float('loss_weight', 2.0, 'used when loss type is weighted, to bias the restaurant recommendation')
+
 FLAGS = tf.flags.FLAGS
 
 class chatBot(object):
-    def __init__(self, data_dir, model_dir, logs_dir, task_id, isInteractive=True, OOV=False, memory_size=50, random_state=None, batch_size=32, learning_rate=0.01, epsilon=1e-8, max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20, loss_type='uniform'):
+    def __init__(self, data_dir, model_dir, logs_dir, task_id, isInteractive=True, OOV=False, memory_size=50, random_state=None, batch_size=32, learning_rate=0.01, epsilon=1e-8, max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20, loss_type='uniform', loss_weight=2.0):
         self.data_dir = data_dir
         self.task_id = task_id
         self.model_dir = model_dir
@@ -59,6 +61,8 @@ class chatBot(object):
         self.hops = hops
         self.epochs = epochs
         self.embedding_size = embedding_size
+        self.loss_type = loss_type
+        self.loss_weight = loss_weight
         
         if OOV:
             print("Task ", task_id, " with OOV")
@@ -83,7 +87,7 @@ class chatBot(object):
             learning_rate=self.learning_rate, epsilon=self.epsilon)
         self.sess = tf.Session()
         self.model = MemN2NDialog(self.batch_size, self.vocab_size, self.n_cand, self.sentence_size, self.embedding_size, self.candidates_vec, session=self.sess,
-                                  hops=self.hops, max_grad_norm=self.max_grad_norm, optimizer=optimizer, task_id=task_id, loss_type=loss_type)
+                                  hops=self.hops, max_grad_norm=self.max_grad_norm, optimizer=optimizer, task_id=task_id, loss_type=loss_type, loss_weight=self.loss_weight)
         self.saver = tf.train.Saver(max_to_keep=50)
 
         #self.summary_writer = tf.summary.FileWriter(
@@ -131,7 +135,7 @@ class chatBot(object):
             data = [(context, u, -1)]
             s, q, a = vectorize_data(
                 data, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
-            preds = self.model.predict(s, q)
+            preds,_,_ = self.model.predict(s, q)
             r = self.indx2candid[preds[0]]
             print(r)
             r = tokenize(r)
@@ -169,8 +173,8 @@ class chatBot(object):
                 cost_t = self.model.batch_fit(s, q, a, c)
                 total_cost += cost_t
             if t % self.evaluation_interval == 0:
-                train_preds,_ = self.batch_predict(trainS, trainQ, n_train)
-                val_preds,_ = self.batch_predict(valS, valQ, n_val)
+                train_preds,_,_ = self.batch_predict(trainS, trainQ, n_train)
+                val_preds,_,_ = self.batch_predict(valS, valQ, n_val)
                 train_acc = metrics.accuracy_score(
                     np.array(train_preds), trainA)
                 val_acc = metrics.accuracy_score(val_preds, valA)
@@ -210,7 +214,7 @@ class chatBot(object):
             testS, testQ, testA, S_in_readable_form, Q_in_readable_form, last_db_results, dialogIDs  = vectorize_data_with_surface_form(
                 self.testData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
             n_test = len(testS)
-            test_preds,attn_weights = self.batch_predict(testS, testQ, n_test)
+            test_preds,attn_weights,ranked_candidates_list = self.batch_predict(testS, testQ, n_test)
             test_acc = metrics.accuracy_score(test_preds, testA)
             match=0
             total=0
@@ -245,6 +249,12 @@ class chatBot(object):
                             if len(sorted_tuple) > tuple_idx and sorted_tuple[tuple_idx][1] > 0.001:
                                 attn_list.append(str(sorted_tuple[tuple_idx][1]) + ' : ' + sorted_tuple[tuple_idx][2])
                         data_point['attn-hop-' + str(hop_index)]=attn_list
+                
+                ranked_candidateids = ranked_candidates_list[idx]
+                ranked_candidates = []
+                for i in range(len(ranked_candidateids)):
+                    ranked_candidates.append(self.indx2candid[ranked_candidateids[i]])
+                data_point['ranked-candidates']=ranked_candidates
                 all_data_points.append(data_point)
 
                 if self.task_id==3 and "what do you think of this option:" in answer :
@@ -260,10 +270,13 @@ class chatBot(object):
                         pred_restaurant=pred_str[34:].strip()
                         if pred_restaurant in dbset:
                             match=match+1
-
-            file_to_dump_json= self.logs_dir + 'task-'+str(self.task_id)+'.json'
+            
+            file_prefix = self.logs_dir + 'task-'+str(self.task_id)+ '_hops-' + str(self.hops) + '_loss-' +str(self.loss_type)
+            if self.loss_type == "weighted":
+                file_prefix = file_prefix + '-'+str(self.loss_weight)   
+            file_to_dump_json=  file_prefix + '.json'
             if self.OOV:
-                file_to_dump_json= self.logs_dir + 'task-'+str(self.task_id)+'-oov.json'
+                file_to_dump_json= file_prefix + '-oov.json'
             
             with open(file_to_dump_json, 'w') as f:
                 json.dump(all_data_points, f, indent=4)
@@ -284,7 +297,7 @@ class chatBot(object):
                             s = testS[idx:idx+1]
                             q = testQ[idx:idx+1]
                             a = testA[idx]
-                            pred, att = self.model.predict(s, q)
+                            pred, _, _ = self.model.predict(s, q)
                             turn = S_in_readable_form[idx][-1]
                             turn_no = int(turn.split('#')[1].split(' ')[0])
                             while pred.item(0) != a and count < 100:
@@ -297,7 +310,7 @@ class chatBot(object):
                                 request_query_append = np.array([query1_hash, query2_hash])
                                 s = [np.concatenate((s[0], request_query_append))]
                                 count += 1                   
-                                pred, att = self.model.predict(s, q)
+                                pred, _, _ = self.model.predict(s, q)
                             counter.append(count)
                 print("Suggestion Game Mean   :", float(sum(counter))/len(counter))
             restaurant_reco_evluation(test_preds, testA, self.indx2candid)
@@ -308,17 +321,19 @@ class chatBot(object):
     def batch_predict(self, S, Q, n):
         preds = []
         attn_weights = []
+        ranked_candidates_list = []
         for k in range(0,self.hops):
             attn_weights.append([])
         for start in range(0, n, self.batch_size):
             end = start + self.batch_size
             s = S[start:end]
             q = Q[start:end]
-            pred, attn_arr = self.model.predict(s, q)
+            pred, attn_arr, ranked_candidates = self.model.predict(s, q)
             preds += list(pred)
             for k in range(0,self.hops):
                 attn_weights[k].extend(attn_arr[k])
-        return preds,attn_weights
+            ranked_candidates_list.extend(ranked_candidates)
+        return preds,attn_weights,ranked_candidates_list
 
     def classify_dialogs(self, A):
         answer_type = []
@@ -335,13 +350,20 @@ class chatBot(object):
 
 
 if __name__ == '__main__':
+    
     model_dir = FLAGS.model_dir + "task" + str(FLAGS.task_id) + "_model/"
+    if FLAGS.data_dir == "../data/dialog-anonymized/":
+        loss_weight_flag = ""
+        if FLAGS.loss_type == "weighted":
+            loss_weight_flag = "-" + str(FLAGS.loss_weight)
+        model_dir = FLAGS.model_dir + "task" + str(FLAGS.task_id) + "_loss-" + str(FLAGS.loss_type) + loss_weight_flag + "_hops-" + str(FLAGS.hops) + "_model/"
+
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     chatbot = chatBot(FLAGS.data_dir, model_dir, FLAGS.logs_dir, FLAGS.task_id, OOV=FLAGS.OOV,
                       isInteractive=FLAGS.interactive, batch_size=FLAGS.batch_size, epochs=FLAGS.epochs,
                       learning_rate = FLAGS.learning_rate, hops = FLAGS.hops, embedding_size = FLAGS.embedding_size,
-                      loss_type = FLAGS.loss_type)
+                      loss_type = FLAGS.loss_type, loss_weight=FLAGS.loss_weight)
     # chatbot.run()
     if FLAGS.train:
         chatbot.train()
